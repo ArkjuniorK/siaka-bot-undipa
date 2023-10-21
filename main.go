@@ -90,6 +90,7 @@ func main() {
 	// Register handlers to telegram bot
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/login", bot.MatchTypeExact, h.Login)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/logout", bot.MatchTypeExact, h.Logout)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/status", bot.MatchTypeExact, h.Status)
 
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/bpp", bot.MatchTypeExact, h.BPP)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/divlearn", bot.MatchTypeExact, h.APIDiv)

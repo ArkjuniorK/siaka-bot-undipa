@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -33,7 +34,7 @@ func (h *Handler) Default(ctx context.Context, b *bot.Bot, update *models.Update
 	}
 
 	b.SendMessage(ctx, &bot.SendMessageParams{
-		Text:   "Selamat datang, silahkan masuk untuk memulai",
+		Text:   "Selamat datang, silahkan masuk untuk memulai!",
 		ChatID: update.Message.Chat.ID,
 	})
 
@@ -44,12 +45,15 @@ func (h *Handler) Default(ctx context.Context, b *bot.Bot, update *models.Update
 // Login handle the /login and stb-pass command. This handler would save the
 // cookie to cache as JSON if user successfully logged in.
 func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) {
-	cookies := h.getCookie(ctx, b, update)
-	if cookies != nil {
+	//cookies := h.getCookie(ctx, b, update)
+	csStr, _ := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
+	if len(csStr) != 0 {
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			Text:   "Anda telah masuk!",
 			ChatID: update.Message.Chat.ID,
 		})
+
+		return
 	}
 
 	msg := update.Message.Text
@@ -84,7 +88,7 @@ func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) 
 			return
 		}
 
-		h.r.Set(ctx, update.Message.From.Username, csj, 40*time.Minute)
+		h.r.Set(ctx, strconv.Itoa(int(update.Message.From.ID)), csj, 40*time.Minute)
 		h.r.Save(ctx)
 	})
 
@@ -103,10 +107,29 @@ func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) 
 	return
 }
 
+func (h *Handler) Status(ctx context.Context, b *bot.Bot, update *models.Update) {
+	cookies, _ := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
+	if len(cookies) != 0 {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			Text:   "Anda telah masuk!",
+			ChatID: update.Message.Chat.ID,
+		})
+
+		return
+	}
+
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		Text:   "Anda belum masuk kedalam sistem!",
+		ChatID: update.Message.Chat.ID,
+	})
+
+	return
+}
+
 // Logout would remove the user's data from cache.
 func (h *Handler) Logout(ctx context.Context, b *bot.Bot, update *models.Update) {
 	var (
-		key    = update.Message.From.Username
+		key    = strconv.Itoa(int(update.Message.From.ID))
 		keyBPP = key + "bpp"
 		keySch = key + "schedule"
 	)
@@ -122,16 +145,15 @@ func (h *Handler) Logout(ctx context.Context, b *bot.Bot, update *models.Update)
 
 	msg := "Anda telah keluar dari SIAKA Universitas Dipa Makassar\nTerima kasih."
 	b.SendMessage(ctx, &bot.SendMessageParams{
-		Text:      msg,
-		ChatID:    update.Message.Chat.ID,
-		ParseMode: models.ParseModeMarkdown,
+		Text:   msg,
+		ChatID: update.Message.Chat.ID,
 	})
 }
 
 func (h *Handler) BPP(ctx context.Context, b *bot.Bot, update *models.Update) {
 	var (
 		url = SIAKA + "?page=vbpp"
-		key = update.Message.From.Username + "bpp"
+		key = strconv.Itoa(int(update.Message.From.ID)) + "bpp"
 	)
 
 	cookies := h.getCookie(ctx, b, update)
@@ -207,7 +229,7 @@ func (h *Handler) BPP(ctx context.Context, b *bot.Bot, update *models.Update) {
 func (h *Handler) Schedule(ctx context.Context, b *bot.Bot, update *models.Update) {
 	var (
 		url = SIAKA + "?page=kelas"
-		key = update.Message.From.Username + "schedule"
+		key = strconv.Itoa(int(update.Message.From.ID)) + "schedule"
 	)
 
 	cookies := h.getCookie(ctx, b, update)
@@ -364,8 +386,8 @@ func (h *Handler) handlerError(ctx context.Context, b *bot.Bot, update *models.U
 }
 
 func (h *Handler) getCookie(ctx context.Context, b *bot.Bot, update *models.Update) []*http.Cookie {
-	csStr, err := h.r.Get(ctx, update.Message.From.Username).Result()
-	if err == redis.Nil {
+	csStr, err := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
+	if err == redis.Nil && update.Message.Text != "/login" {
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			Text:   "Sesi anda telah berakhir, silahkan masuk kembali untuk mengakses SIAKA!",
 			ChatID: update.Message.Chat.ID,
@@ -374,18 +396,16 @@ func (h *Handler) getCookie(ctx context.Context, b *bot.Bot, update *models.Upda
 		return nil
 	}
 
-	if err != nil {
-		h.l.Println(err)
-		h.handlerError(ctx, b, update)
-		return nil
+	if csStr != "" {
+		var cookies []*http.Cookie
+		if err = json.Unmarshal([]byte(csStr), &cookies); err != nil {
+			h.l.Println(err)
+			h.handlerError(ctx, b, update)
+			return nil
+		}
+
+		return cookies
 	}
 
-	var cookies []*http.Cookie
-	if err = json.Unmarshal([]byte(csStr), &cookies); err != nil {
-		h.l.Println(err)
-		h.handlerError(ctx, b, update)
-		return nil
-	}
-
-	return cookies
+	return nil
 }
