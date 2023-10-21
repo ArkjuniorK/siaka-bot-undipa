@@ -60,3 +60,11 @@ func (h *Handler) APIDiv() bot.HandlerFunc {
 
 	}
 }
+
+//func (h *Handler) sendAlert(ctx context.Context, b *bot.Bot, update *models.Update) {
+//	h.Logout(ctx, b, update)
+//	b.SendMessage(ctx, &bot.SendMessageParams{
+//		ChatID: update.Message.Chat.ID,
+//		Text:   "Tidak dapat mengakses SIAKA, masuk terlebih dahulu!",
+//	})
+//}

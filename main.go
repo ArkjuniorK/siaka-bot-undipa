@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"github.com/go-telegram/bot"
 	"github.com/gocolly/colly"
@@ -17,10 +16,7 @@ import (
 
 func main() {
 	// Initialize logger
-	buf := bytes.Buffer{}
-	logger := log.New(&buf, "siaka-undipa", log.Lshortfile)
-	logger.SetFlags(log.Ldate)
-
+	logger := log.New(os.Stdout, "siaka-undipa-bot | ", log.Lshortfile|log.Ldate|log.Ltime)
 	logger.Println("Initializing dependencies, please wait...")
 
 	// Load env file
@@ -72,11 +68,13 @@ func main() {
 	logger.Println("Handler initialized")
 
 	// Initialize telegram bot
-	dh := bot.WithDefaultHandler(h.Default())
-	mw := bot.WithMiddlewares(Logger(logger))
+	opts := []bot.Option{
+		bot.WithDefaultHandler(h.Default()),
+		bot.WithMiddlewares(Logger(logger)),
+	}
 
 	token := os.Getenv("TG_BOT_TOKEN")
-	b, err := bot.New(token, dh, mw)
+	b, err := bot.New(token, opts...)
 	if err != nil {
 		logger.Fatalln(err)
 	}
