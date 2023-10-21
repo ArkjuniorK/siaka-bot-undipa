@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"time"
 )
 
@@ -44,22 +45,25 @@ func main() {
 	logger.Println("Redis cache initialized, msg:", pong)
 
 	// Initialize colly package and set its configs
-	c := colly.NewCollector(colly.AllowedDomains(DOMAIN), colly.AllowURLRevisit())
-	c.SetRequestTimeout(30 * time.Second)
+	c := colly.NewCollector(colly.AllowedDomains(
+		"siaka."+DOMAIN,
+		"apidiv."+DOMAIN,
+	), colly.AllowURLRevisit())
 	c.WithTransport(&http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
+			Timeout:   30 * time.Minute,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
 		MaxIdleConns:           100,
 		ReadBufferSize:         1024 * 100,
-		IdleConnTimeout:        90 * time.Second,
-		TLSHandshakeTimeout:    10 * time.Second,
-		ExpectContinueTimeout:  10 * time.Second,
-		ResponseHeaderTimeout:  30 * time.Second,
+		IdleConnTimeout:        10 * time.Minute,
+		TLSHandshakeTimeout:    10 * time.Minute,
+		ExpectContinueTimeout:  10 * time.Minute,
+		ResponseHeaderTimeout:  60 * time.Minute,
 		MaxResponseHeaderBytes: 1024 * 100,
 	})
+	c.SetRequestTimeout(10 * time.Minute)
 
 	logger.Println("Collector initialized")
 
@@ -69,8 +73,10 @@ func main() {
 
 	// Initialize telegram bot
 	opts := []bot.Option{
-		bot.WithDefaultHandler(h.Default()),
+		bot.WithDefaultHandler(h.Default),
 		bot.WithMiddlewares(Logger(logger)),
+		bot.WithCheckInitTimeout(1 * time.Hour),
+		bot.WithSkipGetMe(),
 	}
 
 	token := os.Getenv("TG_BOT_TOKEN")
@@ -82,13 +88,16 @@ func main() {
 	logger.Println("Telegram bot initialized")
 
 	// Register handlers to telegram bot
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/login", bot.MatchTypeExact, h.Login())
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/logout", bot.MatchTypeExact, h.Logout())
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/login", bot.MatchTypeExact, h.Login)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/logout", bot.MatchTypeExact, h.Logout)
 
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/bpp", bot.MatchTypeExact, h.BPP())
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/apidiv", bot.MatchTypeExact, h.APIDiv())
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/schedule", bot.MatchTypeExact, h.Schedule())
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/lecturer", bot.MatchTypeExact, h.Lecturer())
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/bpp", bot.MatchTypeExact, h.BPP)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/divlearn", bot.MatchTypeExact, h.APIDiv)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/schedule", bot.MatchTypeExact, h.Schedule)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/lecturer", bot.MatchTypeExact, h.Lecturer)
+
+	stbRe := regexp.MustCompile("[0-9]-[A-Za-z0-9]")
+	b.RegisterHandlerRegexp(bot.HandlerTypeMessageText, stbRe, h.Login)
 
 	logger.Println("Handler registered")
 
