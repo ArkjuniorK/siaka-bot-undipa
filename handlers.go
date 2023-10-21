@@ -33,7 +33,7 @@ func (h *Handler) Default(ctx context.Context, b *bot.Bot, update *models.Update
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		Text:   "Selamat datang, silahkan masuk untuk memulai!",
 		ChatID: update.Message.Chat.ID,
 	})
@@ -45,10 +45,9 @@ func (h *Handler) Default(ctx context.Context, b *bot.Bot, update *models.Update
 // Login handle the /login and stb-pass command. This handler would save the
 // cookie to cache as JSON if user successfully logged in.
 func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) {
-	//cookies := h.getCookie(ctx, b, update)
 	csStr, _ := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
 	if len(csStr) != 0 {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			Text:   "Anda telah masuk!",
 			ChatID: update.Message.Chat.ID,
 		})
@@ -58,7 +57,7 @@ func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) 
 
 	msg := update.Message.Text
 	if msg == "/login" {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			Text:   "Silahkan masuk dengan mengetikkan Stambuk dan Kata Sandi. Adapun format yang di gunakan yaitu :\n\nstambuk-kata sandi\n\nTerimakasih.",
 			ChatID: update.Message.Chat.ID,
 		})
@@ -97,31 +96,31 @@ func (h *Handler) Login(ctx context.Context, b *bot.Bot, update *models.Update) 
 	}
 
 	text := "Berhasil masuk! Gunakan menu yang telah disediakan untuk mengakses SIAKA."
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		Text:      text,
-		ChatID:    update.Message.Chat.ID,
-		ParseMode: models.ParseModeMarkdown,
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+		Text:   text,
+		ChatID: update.Message.Chat.ID,
 	})
 
-	b.DeleteMessage(ctx, &bot.DeleteMessageParams{ChatID: update.Message.Chat.ID, MessageID: update.Message.ID})
+	_, _ = b.DeleteMessage(ctx, &bot.DeleteMessageParams{ChatID: update.Message.Chat.ID, MessageID: update.Message.ID})
 	return
 }
 
 func (h *Handler) Status(ctx context.Context, b *bot.Bot, update *models.Update) {
 	cookies, _ := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
 	if len(cookies) != 0 {
-		b.SendMessage(ctx, &bot.SendMessageParams{
-			Text:   "Anda telah masuk!",
-			ChatID: update.Message.Chat.ID,
-		})
+		_, _ =
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				Text:   "Anda telah masuk!",
+				ChatID: update.Message.Chat.ID,
+			})
 
 		return
 	}
-
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		Text:   "Anda belum masuk kedalam sistem!",
-		ChatID: update.Message.Chat.ID,
-	})
+	_, _ =
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			Text:   "Anda belum masuk kedalam sistem!",
+			ChatID: update.Message.Chat.ID,
+		})
 
 	return
 }
@@ -144,7 +143,7 @@ func (h *Handler) Logout(ctx context.Context, b *bot.Bot, update *models.Update)
 	h.r.Del(ctx, keySch)
 
 	msg := "Anda telah keluar dari SIAKA Universitas Dipa Makassar\nTerima kasih."
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		Text:   msg,
 		ChatID: update.Message.Chat.ID,
 	})
@@ -163,7 +162,7 @@ func (h *Handler) BPP(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	sch, _ := h.r.Get(ctx, key).Result()
 	if sch != "" {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text:   fmt.Sprint(sch),
 		})
@@ -177,7 +176,7 @@ func (h *Handler) BPP(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   "Memproses data BPP, mohon tunggu...",
 	})
@@ -220,7 +219,7 @@ func (h *Handler) BPP(ctx context.Context, b *bot.Bot, update *models.Update) {
 	h.r.Set(ctx, key, bppRs, 30*time.Minute)
 	h.r.Save(ctx)
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   fmt.Sprint(bppRs),
 	})
@@ -239,7 +238,7 @@ func (h *Handler) Schedule(ctx context.Context, b *bot.Bot, update *models.Updat
 
 	sch, _ := h.r.Get(ctx, key).Result()
 	if sch != "" {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text:   fmt.Sprint(sch),
 		})
@@ -252,7 +251,7 @@ func (h *Handler) Schedule(ctx context.Context, b *bot.Bot, update *models.Updat
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   "Memproses data mata kuliah, mohon tunggu...",
 	})
@@ -291,7 +290,7 @@ func (h *Handler) Schedule(ctx context.Context, b *bot.Bot, update *models.Updat
 	h.r.Set(ctx, key, schRs, 30*time.Minute)
 	h.r.Save(ctx)
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   fmt.Sprint(schRs),
 	})
@@ -316,7 +315,7 @@ func (h *Handler) Lecturer(ctx context.Context, b *bot.Bot, update *models.Updat
 	if lecs != "" {
 		lecturers := strings.Split(lecs, "~")
 		p := paginator.New(lecturers, opts...)
-		p.Show(ctx, b, update.Message.Chat.ID)
+		_, _ = p.Show(ctx, b, update.Message.Chat.ID)
 		return
 	}
 
@@ -326,7 +325,7 @@ func (h *Handler) Lecturer(ctx context.Context, b *bot.Bot, update *models.Updat
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   "Memproses data dosen, mohon tunggu...",
 	})
@@ -368,18 +367,18 @@ func (h *Handler) Lecturer(ctx context.Context, b *bot.Bot, update *models.Updat
 	h.r.Save(ctx)
 
 	p := paginator.New(lecturers, opts...)
-	p.Show(ctx, b, update.Message.Chat.ID)
+	_, _ = p.Show(ctx, b, update.Message.Chat.ID)
 }
 
 func (h *Handler) APIDiv(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		Text:   "Coming soon...",
 		ChatID: update.Message.Chat.ID,
 	})
 }
 
 func (h *Handler) handlerError(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		Text:   "Terjadi kesalahan! Coba beberapa saat lagi.",
 		ChatID: update.Message.Chat.ID,
 	})
@@ -388,7 +387,7 @@ func (h *Handler) handlerError(ctx context.Context, b *bot.Bot, update *models.U
 func (h *Handler) getCookie(ctx context.Context, b *bot.Bot, update *models.Update) []*http.Cookie {
 	csStr, err := h.r.Get(ctx, strconv.Itoa(int(update.Message.From.ID))).Result()
 	if err == redis.Nil && update.Message.Text != "/login" {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			Text:   "Sesi anda telah berakhir, silahkan masuk kembali untuk mengakses SIAKA!",
 			ChatID: update.Message.Chat.ID,
 		})
